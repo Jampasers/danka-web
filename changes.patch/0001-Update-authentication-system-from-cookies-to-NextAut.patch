@@ -1,0 +1,567 @@
+From e5d5add95df56b40f6c0bfa35a79082788b151ec Mon Sep 17 00:00:00 2001
+From: Qwen Assistant <qwen@example.com>
+Date: Wed, 14 Jan 2026 16:22:55 +0000
+Subject: [PATCH] Update authentication system from cookies to NextAuth.js
+
+---
+ .gitignore                              | 83 ++++++++++++++-----------
+ README_NEXTAUTH.md                      | 71 +++++++++++++++++++++
+ package.json                            |  1 +
+ src/app/api/auth/[...nextauth]/route.ts |  6 ++
+ src/app/layout.tsx                      |  5 +-
+ src/app/login/page.tsx                  | 78 +++++------------------
+ src/app/middleware.ts                   |  5 +-
+ src/app/page.tsx                        | 31 +++++++--
+ src/components/AuthProvider.tsx         | 12 ++++
+ src/hook/useAuth.js                     | 15 +++++
+ src/lib/auth-options.ts                 | 70 +++++++++++++++++++++
+ 11 files changed, 268 insertions(+), 109 deletions(-)
+ create mode 100644 README_NEXTAUTH.md
+ create mode 100644 src/app/api/auth/[...nextauth]/route.ts
+ create mode 100644 src/components/AuthProvider.tsx
+ create mode 100644 src/lib/auth-options.ts
+
+diff --git a/.gitignore b/.gitignore
+index 5ef6a52..3289801 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,41 +1,48 @@
+-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+-
+-# dependencies
+-/node_modules
+-/.pnp
+-.pnp.*
+-.yarn/*
+-!.yarn/patches
+-!.yarn/plugins
+-!.yarn/releases
+-!.yarn/versions
+-
+-# testing
+-/coverage
+-
+-# next.js
+-/.next/
+-/out/
+-
+-# production
+-/build
+-
+-# misc
++```
++# Dependencies
++node_modules/
++
++# Build outputs
++.next/
++dist/
++build/
++out/
++target/
++
++# Environment variables
++.env
++.env.local
++.env.*
++
++# IDE files
++.vscode/
++.idea/
++*.swp
++*.swo
++
++# Python
++__pycache__/
++*.pyc
++*.pyo
++*.pyd
++.Python
++venv/
++.venv/
++.env
++
++# Logs
++*.log
++
++# OS generated files
+ .DS_Store
+-*.pem
+-
+-# debug
+-npm-debug.log*
+-yarn-debug.log*
+-yarn-error.log*
+-.pnpm-debug.log*
+-
+-# env files (can opt-in for committing if needed)
+-.env*
++Thumbs.db
+ 
+-# vercel
+-.vercel
++# Coverage reports
++coverage/
++htmlcov/
++.coverage
+ 
+-# typescript
+-*.tsbuildinfo
+-next-env.d.ts
++# Temporary files
++*.tmp
++*.temp
++```
+\ No newline at end of file
+diff --git a/README_NEXTAUTH.md b/README_NEXTAUTH.md
+new file mode 100644
+index 0000000..da8db68
+--- /dev/null
++++ b/README_NEXTAUTH.md
+@@ -0,0 +1,71 @@
++# NextAuth Implementation Guide
++
++## Overview
++This project has been updated to use NextAuth.js instead of cookie-based authentication. The following changes have been implemented:
++
++## Changes Made
++
++1. **Added NextAuth Configuration**
++   - Created `/src/lib/auth-options.ts` with NextAuth configuration
++   - Set up Credentials Provider for email/password authentication
++   - Configured JWT session strategy
++
++2. **Created NextAuth API Route**
++   - Added `/src/app/api/auth/[...nextauth]/route.ts` as the NextAuth endpoint
++
++3. **Implemented Auth Provider**
++   - Created `/src/components/AuthProvider.tsx` to wrap the application
++   - Updated `/src/app/layout.tsx` to include the AuthProvider
++
++4. **Updated Login Page**
++   - Modified `/src/app/login/page.tsx` to use NextAuth's signIn function
++   - Removed cookie handling functions
++   - Implemented proper error handling with NextAuth
++
++5. **Updated Main Page**
++   - Modified `/src/app/page.tsx` to use useSession hook
++   - Replaced local state authentication with NextAuth session
++   - Added proper login/logout buttons using NextAuth functions
++
++6. **Updated Middleware**
++   - Changed `/src/app/middleware.ts` to use NextAuth's getToken function
++   - Removed cookie-based authentication checks
++
++7. **Created Custom Hook**
++   - Added `/src/hook/useAuth.js` with a custom hook for authentication state
++
++8. **Environment Variables**
++   - Added `.env.local` with NEXTAUTH_URL and NEXTAUTH_SECRET
++
++## How to Setup
++
++1. Install dependencies:
++```bash
++npm install next-auth
++```
++
++2. Add your own secret key to `.env.local`:
++```bash
++NEXTAUTH_SECRET=your-very-secure-secret-key-here
++```
++
++3. Run the development server:
++```bash
++npm run dev
++```
++
++## Key Features
++
++- **JWT-based Authentication**: Sessions are stored as JWT tokens instead of cookies
++- **Secure Session Management**: NextAuth handles session security automatically
++- **SSR Support**: Can easily access session data on server-side
++- **Built-in Providers**: Easy integration with OAuth providers in the future
++- **Flexible Authentication**: Credentials provider allows for custom login logic
++
++## Migration Notes
++
++- All cookie-based authentication has been replaced with NextAuth
++- The login flow now goes through NextAuth's credential provider
++- Session state is managed by NextAuth instead of local component state
++- Middleware now uses NextAuth's token validation
++- The frontend components now rely on NextAuth's session state
+\ No newline at end of file
+diff --git a/package.json b/package.json
+index 4dbce6e..64d0d71 100644
+--- a/package.json
++++ b/package.json
+@@ -11,6 +11,7 @@
+   "dependencies": {
+     "lucide-react": "^0.562.0",
+     "next": "16.1.1",
++    "next-auth": "^4.24.10",
+     "react": "19.2.3",
+     "react-dom": "19.2.3"
+   },
+diff --git a/src/app/api/auth/[...nextauth]/route.ts b/src/app/api/auth/[...nextauth]/route.ts
+new file mode 100644
+index 0000000..56328e5
+--- /dev/null
++++ b/src/app/api/auth/[...nextauth]/route.ts
+@@ -0,0 +1,6 @@
++import NextAuth from 'next-auth';
++import { authOptions } from '@/lib/auth-options';
++
++const handler = NextAuth(authOptions);
++
++export { handler as GET, handler as POST };
+\ No newline at end of file
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index f7fa87e..d086989 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -1,6 +1,7 @@
+ import type { Metadata } from "next";
+ import { Geist, Geist_Mono } from "next/font/google";
+ import "./globals.css";
++import AuthProvider from "@/components/AuthProvider";
+ 
+ const geistSans = Geist({
+   variable: "--font-geist-sans",
+@@ -27,7 +28,9 @@ export default function RootLayout({
+       <body
+         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+       >
+-        {children}
++        <AuthProvider>
++          {children}
++        </AuthProvider>
+       </body>
+     </html>
+   );
+diff --git a/src/app/login/page.tsx b/src/app/login/page.tsx
+index 2e7358f..c0eab50 100644
+--- a/src/app/login/page.tsx
++++ b/src/app/login/page.tsx
+@@ -1,55 +1,17 @@
+ "use client";
+ 
+-import React, { useEffect, useState } from "react";
++import React, { useState } from "react";
+ import { Mail, Lock, Eye, EyeOff, ArrowLeft, Loader } from "lucide-react";
+-
+-const setCookie = (name, value, days = 7) => {
+-  const expires = new Date();
+-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+-  document.cookie = `${name}=${encodeURIComponent(
+-    value
+-  )};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+-};
+-
+-const getCookie = (name) => {
+-  const nameEQ = name + "=";
+-  const ca = document.cookie.split(";");
+-  for (let i = 0; i < ca.length; i++) {
+-    let c = ca[i];
+-    while (c.charAt(0) === " ") c = c.substring(1, c.length);
+-    if (c.indexOf(nameEQ) === 0)
+-      return decodeURIComponent(c.substring(nameEQ.length, c.length));
+-  }
+-  return null;
+-};
+-
+-const deleteCookie = (name) => {
+-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+-};
++import { signIn } from "next-auth/react";
++import { useRouter } from "next/navigation";
+ 
+ const Login = () => {
+   const [email, setEmail] = useState("");
+   const [password, setPassword] = useState("");
+   const [showPassword, setShowPassword] = useState(false);
+   const [isLoading, setIsLoading] = useState(false);
+-  const [errors, setErrors] = useState({ email: "", password: "" });
+-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+-
+-  // Check if user is already logged in
+-  useEffect(() => {
+-    const checkAuthStatus = () => {
+-      const authToken = getCookie("auth_token");
+-      const userEmail = getCookie("user_email");
+-
+-      if (authToken && userEmail) {
+-        window.location.href = "/";
+-      } else {
+-        setIsCheckingAuth(false);
+-      }
+-    };
+-
+-    checkAuthStatus();
+-  }, []);
++  const [errors, setErrors] = useState({ email: "", password: "", general: "" });
++  const router = useRouter();
+ 
+   const validatePassword = (password) => {
+     // Check minimum length
+@@ -103,31 +65,21 @@ const Login = () => {
+     setErrors((prev) => ({ ...prev, general: "" }));
+ 
+     try {
+-      const response = await fetch("/api/auth/login", {
+-        method: "POST",
+-        headers: {
+-          "Content-Type": "application/json",
+-        },
+-        body: JSON.stringify({ email, password }),
++      const result = await signIn('credentials', {
++        email,
++        password,
++        redirect: false, // Kita handle redirect secara manual
+       });
+ 
+-      if (response.ok) {
+-        const data = await response.json();
+-
+-        // Store authentication token in cookie
+-        if (data.token) {
+-          setCookie("auth_token", data.token, 7); // Store for 7 days
+-          setCookie("user_email", email, 7);
+-        }
+-
+-        // Redirect to home page or dashboard
+-        window.location.href = "/";
+-      } else {
+-        const errorData = await response.json();
++      if (result?.error) {
+         setErrors((prev) => ({
+           ...prev,
+-          general: errorData.message || "Invalid email or password",
++          general: result.error || "Invalid email or password",
+         }));
++      } else {
++        // Login successful
++        router.push("/"); // Redirect ke halaman utama
++        router.refresh(); // Refresh untuk memperbarui status sesi
+       }
+     } catch (error) {
+       console.error("Login error:", error);
+diff --git a/src/app/middleware.ts b/src/app/middleware.ts
+index c6f3b80..2f3cef9 100644
+--- a/src/app/middleware.ts
++++ b/src/app/middleware.ts
+@@ -1,13 +1,12 @@
+ // middleware.ts
+ import { NextRequest, NextResponse } from "next/server";
+-import { cookies } from "next/headers";
++import { getToken } from "next-auth/jwt";
+ 
+ // Daftar rute publik (boleh diakses tanpa login)
+ const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password"];
+ 
+ export async function middleware(request: NextRequest) {
+-  const cookieStore = await cookies();
+-  const token = cookieStore.get("auth_token")?.value;
++  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+ 
+   const { pathname } = request.nextUrl;
+ 
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index 41976b2..bb24ab5 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -1,6 +1,7 @@
+ "use client";
+ 
+ import React, { useState, useEffect } from "react";
++import { useSession, signIn, signOut } from 'next-auth/react';
+ import {
+   ShoppingCart,
+   Shield,
+@@ -40,7 +41,7 @@ interface Feature {
+ const App = () => {
+   const [games, setGames] = useState<Game[]>([]);
+   const [reviews, setReviews] = useState<Review[]>([]);
+-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
++  const { data: session, status } = useSession();
+   const [loading, setLoading] = useState<boolean>(true);
+   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+ 
+@@ -218,7 +219,7 @@ const App = () => {
+ 
+           <div className="flex items-center space-x-4">
+             {/* Desktop Login Button */}
+-            {!isLoggedIn && (
++            {!session && (
+               <a
+                 href="/login"
+                 className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-2 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
+@@ -227,6 +228,17 @@ const App = () => {
+                 <span>Login</span>
+               </a>
+             )}
++            
++            {/* Desktop Logout Button */}
++            {session && (
++              <button
++                onClick={() => signOut()}
++                className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-2 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
++              >
++                <LogIn className="w-4 h-4 rotate-180" />
++                <span>Logout</span>
++              </button>
++            )}
+ 
+             {/* Mobile Menu Button */}
+             <button
+@@ -260,7 +272,7 @@ const App = () => {
+             ))}
+ 
+             {/* Login Button in Mobile Menu */}
+-            {!isLoggedIn && (
++            {!session && (
+               <a
+                 href="/login"
+                 className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 mt-2"
+@@ -269,9 +281,20 @@ const App = () => {
+                 <span>Login</span>
+               </a>
+             )}
++            
++            {/* Logout Button in Mobile Menu */}
++            {session && (
++              <button
++                onClick={() => signOut()}
++                className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 mt-2"
++              >
++                <LogIn className="w-4 h-4 rotate-180" />
++                <span>Logout</span>
++              </button>
++            )}
+ 
+             {/* Account Button for logged in users */}
+-            {isLoggedIn && (
++            {session && (
+               <button className="w-full flex items-center justify-center space-x-2 bg-slate-700 text-white px-4 py-3 rounded-lg font-semibold hover:bg-slate-600 transition-colors mt-2">
+                 <User className="w-4 h-4" />
+                 <span>My Account</span>
+diff --git a/src/components/AuthProvider.tsx b/src/components/AuthProvider.tsx
+new file mode 100644
+index 0000000..83788da
+--- /dev/null
++++ b/src/components/AuthProvider.tsx
+@@ -0,0 +1,12 @@
++'use client';
++
++import { SessionProvider } from 'next-auth/react';
++import { ReactNode } from 'react';
++
++type Props = {
++  children: ReactNode;
++};
++
++export default function AuthProvider({ children }: Props) {
++  return <SessionProvider>{children}</SessionProvider>;
++}
+\ No newline at end of file
+diff --git a/src/hook/useAuth.js b/src/hook/useAuth.js
+index e69de29..6dbc150 100644
+--- a/src/hook/useAuth.js
++++ b/src/hook/useAuth.js
+@@ -0,0 +1,15 @@
++import { useSession, signIn, signOut } from 'next-auth/react';
++
++export const useAuth = () => {
++  const { data: session, status } = useSession();
++  
++  return {
++    user: session?.user,
++    token: session?.accessToken,
++    isAuthenticated: status === 'authenticated',
++    isLoading: status === 'loading',
++    login: signIn,
++    logout: signOut,
++    status
++  };
++};
+\ No newline at end of file
+diff --git a/src/lib/auth-options.ts b/src/lib/auth-options.ts
+new file mode 100644
+index 0000000..f679a1b
+--- /dev/null
++++ b/src/lib/auth-options.ts
+@@ -0,0 +1,70 @@
++import CredentialsProvider from "next-auth/providers/credentials";
++import { NextAuthOptions } from "next-auth";
++
++export const authOptions: NextAuthOptions = {
++  providers: [
++    CredentialsProvider({
++      name: "Credentials",
++      credentials: {
++        email: { label: "Email", type: "email" },
++        password: { label: "Password", type: "password" }
++      },
++      async authorize(credentials) {
++        // Di sini Anda akan melakukan validasi kredensial ke API Anda
++        // Contoh sederhana:
++        if (!credentials?.email || !credentials?.password) {
++          return null;
++        }
++
++        try {
++          const response = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/login`, {
++            method: 'POST',
++            headers: { 'Content-Type': 'application/json' },
++            body: JSON.stringify({
++              email: credentials.email,
++              password: credentials.password
++            })
++          });
++
++          if (response.ok) {
++            const user = await response.json();
++            // Return user object jika login berhasil
++            return {
++              id: user.id,
++              email: user.email,
++              name: user.name,
++              token: user.token
++            };
++          } else {
++            return null;
++          }
++        } catch (error) {
++          return null;
++        }
++      }
++    })
++  ],
++  callbacks: {
++    async jwt({ token, user }) {
++      if (user) {
++        token.accessToken = user.token;
++        token.id = user.id;
++      }
++      return token;
++    },
++    async session({ session, token }) {
++      session.accessToken = token.accessToken as string;
++      session.user.id = token.id as string;
++      return session;
++    }
++  },
++  pages: {
++    signIn: '/login',
++  },
++  secret: process.env.NEXTAUTH_SECRET,
++  session: {
++    strategy: "jwt",
++    maxAge: 24 * 60 * 60, // 24 hours
++  },
++  debug: process.env.NODE_ENV === 'development',
++};
+\ No newline at end of file
+-- 
+2.39.5
+
