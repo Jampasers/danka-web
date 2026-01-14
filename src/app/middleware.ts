@@ -1,13 +1,12 @@
 // middleware.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { getToken } from "next-auth/jwt";
 
 // Daftar rute publik (boleh diakses tanpa login)
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password"];
 
 export async function middleware(request: NextRequest) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth_token")?.value;
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
   const { pathname } = request.nextUrl;
 

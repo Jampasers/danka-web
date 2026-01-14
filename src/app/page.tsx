@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSession, signIn, signOut } from 'next-auth/react';
 import {
   ShoppingCart,
   Shield,
@@ -40,7 +41,7 @@ interface Feature {
 const App = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState<boolean>(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
@@ -218,7 +219,7 @@ const App = () => {
 
           <div className="flex items-center space-x-4">
             {/* Desktop Login Button */}
-            {!isLoggedIn && (
+            {!session && (
               <a
                 href="/login"
                 className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-2 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
@@ -226,6 +227,17 @@ const App = () => {
                 <LogIn className="w-4 h-4" />
                 <span>Login</span>
               </a>
+            )}
+            
+            {/* Desktop Logout Button */}
+            {session && (
+              <button
+                onClick={() => signOut()}
+                className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-2 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
+              >
+                <LogIn className="w-4 h-4 rotate-180" />
+                <span>Logout</span>
+              </button>
             )}
 
             {/* Mobile Menu Button */}
@@ -260,7 +272,7 @@ const App = () => {
             ))}
 
             {/* Login Button in Mobile Menu */}
-            {!isLoggedIn && (
+            {!session && (
               <a
                 href="/login"
                 className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 mt-2"
@@ -269,9 +281,20 @@ const App = () => {
                 <span>Login</span>
               </a>
             )}
+            
+            {/* Logout Button in Mobile Menu */}
+            {session && (
+              <button
+                onClick={() => signOut()}
+                className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 mt-2"
+              >
+                <LogIn className="w-4 h-4 rotate-180" />
+                <span>Logout</span>
+              </button>
+            )}
 
             {/* Account Button for logged in users */}
-            {isLoggedIn && (
+            {session && (
               <button className="w-full flex items-center justify-center space-x-2 bg-slate-700 text-white px-4 py-3 rounded-lg font-semibold hover:bg-slate-600 transition-colors mt-2">
                 <User className="w-4 h-4" />
                 <span>My Account</span>
