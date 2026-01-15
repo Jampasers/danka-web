@@ -1,18 +1,19 @@
 // middleware.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { getToken } from "next-auth/jwt";
 
 // Daftar rute publik (boleh diakses tanpa login)
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password"];
+const AUTH_ROUTES = ["/login", "/register"]; // Rute untuk otentikasi
 
 export async function middleware(request: NextRequest) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth_token")?.value;
-
   const { pathname } = request.nextUrl;
+  
+  // Dapatkan token dari NextAuth
+  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET || "default_secret_key_for_development" });
 
   // Jika sudah login → redirect dari halaman auth ke homepage
-  if (token && PUBLIC_ROUTES.includes(pathname)) {
+  if (token && AUTH_ROUTES.includes(pathname)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
