@@ -6,21 +6,16 @@ import {
   Shield,
   Star,
   Gamepad2,
-  Crown,
   Zap,
   Coins,
   User,
   LogIn,
-  Menu,
-  X,
 } from "lucide-react";
 
-// TypeScript Interfaces
 interface Game {
   id: number;
   name: string;
   image: string;
-  publisher: string;
 }
 
 interface Review {
@@ -40,67 +35,68 @@ interface Feature {
 const App = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
-  // Simulate fetching data from backend
+  // Simulate fetching games from backend
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchGames = async () => {
       try {
-        // Mock games data with publishers
+        // In a real app, this would be: const response = await fetch('/api/games');
+        // Mock data simulating backend response
         const mockGames: Game[] = [
           {
             id: 1,
             name: "PUBG Mobile",
             image: "https://placehold.co/300x200/0f172a/white?text=PUBG",
-            publisher: "Tencent Games",
           },
           {
             id: 2,
             name: "Free Fire",
             image: "https://placehold.co/300x200/0f172a/white?text=Free+Fire",
-            publisher: "Garena",
           },
           {
             id: 3,
             name: "Mobile Legends",
             image: "https://placehold.co/300x200/0f172a/white?text=MLBB",
-            publisher: "Moonton",
           },
           {
             id: 4,
             name: "Valorant",
             image: "https://placehold.co/300x200/0f172a/white?text=Valorant",
-            publisher: "Riot Games",
           },
           {
             id: 5,
             name: "Genshin Impact",
             image: "https://placehold.co/300x200/0f172a/white?text=Genshin",
-            publisher: "miHoYo",
           },
           {
             id: 6,
             name: "Honkai",
             image: "https://placehold.co/300x200/0f172a/white?text=Honkai",
-            publisher: "miHoYo",
           },
           {
             id: 7,
             name: "League of Legends",
             image: "https://placehold.co/300x200/0f172a/white?text=LoL",
-            publisher: "Riot Games",
           },
           {
             id: 8,
             name: "Call of Duty",
             image: "https://placehold.co/300x200/0f172a/white?text=COD",
-            publisher: "Activision",
           },
         ];
+        setGames(mockGames);
+      } catch (error) {
+        console.error("Error fetching games:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        // Mock reviews data
+    const fetchReviews = async () => {
+      try {
+        // In a real app, this would be: const response = await fetch('/api/reviews');
+        // Mock data simulating backend response
         const mockReviews: Review[] = [
           {
             id: 1,
@@ -135,18 +131,16 @@ const App = () => {
             avatar: "https://placehold.co/60x60/0f172a/white?text=EW",
           },
         ];
-
-        setGames(mockGames);
         setReviews(mockReviews);
       } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error fetching reviews:", error);
       }
     };
 
-    fetchData();
+    fetchGames();
+    fetchReviews();
   }, []);
+
 
   const features: Feature[] = [
     {
@@ -171,13 +165,6 @@ const App = () => {
     },
   ];
 
-  const navItems = [
-    { name: "Games", href: "#games" },
-    { name: "Features", href: "#features" },
-    { name: "Reviews", href: "#reviews" },
-    { name: "Contact", href: "#contact" },
-  ];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -191,96 +178,6 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white">
-      {/* Header */}
-      <header className="bg-slate-900 border-b border-blue-800 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">DS</span>
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-              DANKA STORE
-            </span>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            {navItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-gray-300 hover:text-white font-medium"
-              >
-                {item.name}
-              </a>
-            ))}
-          </nav>
-
-          <div className="flex items-center space-x-4">
-            {/* Desktop Login Button */}
-            {!isLoggedIn && (
-              <a
-                href="/login"
-                className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-2 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Login</span>
-              </a>
-            )}
-
-            {/* Mobile Menu Button */}
-            <button
-              className="md:hidden ml-2"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-white" />
-              ) : (
-                <Menu className="w-6 h-6 text-white" />
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile Dropdown Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-slate-800 border-b border-blue-800 py-4 z-40 sticky top-[72px]">
-          <div className="container mx-auto px-4 space-y-2">
-            {navItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="block text-gray-300 hover:text-white font-medium py-3 px-4 rounded-lg hover:bg-slate-700 transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {item.name}
-              </a>
-            ))}
-
-            {/* Login Button in Mobile Menu */}
-            {!isLoggedIn && (
-              <a
-                href="/login"
-                className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 mt-2"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Login</span>
-              </a>
-            )}
-
-            {/* Account Button for logged in users */}
-            {isLoggedIn && (
-              <button className="w-full flex items-center justify-center space-x-2 bg-slate-700 text-white px-4 py-3 rounded-lg font-semibold hover:bg-slate-600 transition-colors mt-2">
-                <User className="w-4 h-4" />
-                <span>My Account</span>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Hero Section */}
       <section className="py-16 md:py-24 relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10 text-center">
@@ -316,9 +213,6 @@ const App = () => {
                   </div>
                   <span className="text-sm font-medium text-gray-200">
                     {game.name}
-                  </span>
-                  <span className="text-xs text-blue-300 mt-1">
-                    {game.publisher}
                   </span>
                 </div>
               ))}
@@ -376,7 +270,7 @@ const App = () => {
               <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {games.map((game) => (
                 <div
                   key={game.id}
@@ -390,12 +284,9 @@ const App = () => {
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-white text-lg">
+                    <h3 className="font-semibold text-white text-center">
                       {game.name}
                     </h3>
-                    <p className="text-blue-300 text-sm mt-1">
-                      {game.publisher}
-                    </p>
                   </div>
                 </div>
               ))}
@@ -506,10 +397,9 @@ const App = () => {
               <ul className="space-y-2 text-blue-200">
                 {games.slice(0, 4).map((game) => (
                   <li key={game.id}>
-                    <span className="block">{game.name}</span>
-                    <span className="text-xs text-blue-300">
-                      by {game.publisher}
-                    </span>
+                    <a href="#" className="hover:text-white">
+                      {game.name}
+                    </a>
                   </li>
                 ))}
               </ul>
