@@ -1,53 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Loader } from "lucide-react";
-
-const setCookie = (name, value, days = 7) => {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${encodeURIComponent(
-    value
-  )};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-};
-
-const getCookie = (name) => {
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(";");
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === " ") c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0)
-      return decodeURIComponent(c.substring(nameEQ.length, c.length));
-  }
-  return null;
-};
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({ email: "", password: "" });
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [errors, setErrors] = useState({ email: "", password: "", general: "" });
+  const router = useRouter();
 
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuthStatus = () => {
-      const authToken = getCookie("auth_token");
-      const userEmail = getCookie("user_email");
-
-      if (authToken && userEmail) {
-        window.location.href = "/";
-      } else {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    checkAuthStatus();
-  }, []);
-
-  const validatePassword = (password) => {
+  const validatePassword = (password: string) => {
     // Check minimum length
     if (password.length < 8) {
       return "Password must be at least 8 characters long";
@@ -68,7 +34,7 @@ const Login = () => {
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { email: "", password: "" };
+    const newErrors = { email: "", password: "", general: "" };
 
     if (!email) {
       newErrors.email = "Email is required";
@@ -88,7 +54,7 @@ const Login = () => {
     return isValid;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -96,38 +62,28 @@ const Login = () => {
     }
 
     setIsLoading(true);
-    setErrors((prev) => ({ ...prev, general: "" }));
+    setErrors(prev => ({ ...prev, general: "" }));
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false, // Prevent automatic redirect
       });
 
-      if (response.ok) {
-        const data = await response.json();
-
-        // Store authentication token in cookie
-        if (data.token) {
-          setCookie("auth_token", data.token, 7); // Store for 7 days
-          setCookie("user_email", email, 7);
-        }
-
-        // Redirect to home page or dashboard
-        window.location.href = "/";
-      } else {
-        const errorData = await response.json();
-        setErrors((prev) => ({
+      if (result?.error) {
+        setErrors(prev => ({
           ...prev,
-          general: errorData.message || "Invalid email or password",
+          general: result.error || "Invalid email or password",
         }));
+      } else {
+        // Successful login, redirect manually
+        router.push('/');
+        router.refresh(); // Refresh to update UI state
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
         general: "An error occurred. Please try again.",
       }));
