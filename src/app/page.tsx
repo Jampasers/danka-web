@@ -35,7 +35,6 @@ interface Feature {
 const App = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Simulate fetching games from backend
@@ -142,12 +141,6 @@ const App = () => {
     fetchReviews();
   }, []);
 
-  const handleLogin = () => {
-    // In a real app, this would redirect to login page or open modal
-    alert("Login functionality would redirect to authentication page");
-    // Simulate login
-    setIsLoggedIn(true);
-  };
 
   const features: Feature[] = [
     {
@@ -185,68 +178,6 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white">
-      {/* Header */}
-      <header className="bg-slate-900 border-b border-blue-800 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">DS</span>
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-              DANKA STORE
-            </span>
-          </div>
-
-          <nav className="hidden md:flex space-x-8">
-            <a
-              href="#games"
-              className="text-gray-300 hover:text-white font-medium"
-            >
-              Games
-            </a>
-            <a
-              href="#features"
-              className="text-gray-300 hover:text-white font-medium"
-            >
-              Features
-            </a>
-            <a
-              href="#reviews"
-              className="text-gray-300 hover:text-white font-medium"
-            >
-              Reviews
-            </a>
-            <a
-              href="#contact"
-              className="text-gray-300 hover:text-white font-medium"
-            >
-              Contact
-            </a>
-          </nav>
-
-          <div className="flex items-center space-x-4">
-            {isLoggedIn ? (
-              <button className="flex items-center space-x-2 bg-slate-700 px-4 py-2 rounded-full hover:bg-slate-600 transition-colors">
-                <User className="w-4 h-4" />
-                <span>My Account</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleLogin}
-                className="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-orange-600 text-black px-4 py-2 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Login</span>
-              </button>
-            )}
-            <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-black px-6 py-2 rounded-full font-semibold hover:shadow-lg transition-all duration-300 flex items-center space-x-2">
-              <ShoppingCart className="w-4 h-4" />
-              <span>Top Up</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="py-16 md:py-24 relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10 text-center">

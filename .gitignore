@@ -27,29 +27,23 @@ pip-delete-this-directory.txt
 # Logs
 *.log
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Coverage
+.coverage
+coverage/
+htmlcov/
 
-# Editor
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Testing
-coverage/
-htmlcov/
-.coverage
-*.cover
-
-# Distribution / packaging
 .pytest_cache/
 .mypy_cache/
-*.egg-info/
 ```

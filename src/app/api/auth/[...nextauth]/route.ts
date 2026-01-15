@@ -1,24 +1,40 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import fs from 'fs';
+import path from 'path';
 
-// For demo purposes, using simple hardcoded credentials
-// In production, connect to your database
-const users = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    password: "password123",
-    image: "https://placehold.co/60x60/0f172a/white?text=JD",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    password: "password123",
-    image: "https://placehold.co/60x60/0f172a/white?text=JS",
-  },
-];
+// Path to store user data
+const USERS_FILE_PATH = path.join(process.cwd(), 'src', 'app', 'data', 'users.json');
+
+// Read users from file
+let users = [];
+try {
+  if (fs.existsSync(USERS_FILE_PATH)) {
+    const usersData = fs.readFileSync(USERS_FILE_PATH, 'utf8');
+    users = JSON.parse(usersData);
+  } else {
+    // Fallback to initial users if file doesn't exist
+    users = [
+      {
+        id: "1",
+        name: "John Doe",
+        email: "john@example.com",
+        password: "password123",
+        image: "https://placehold.co/60x60/0f172a/white?text=JD",
+      },
+      {
+        id: "2",
+        name: "Jane Smith",
+        email: "jane@example.com",
+        password: "password123",
+        image: "https://placehold.co/60x60/0f172a/white?text=JS",
+      },
+    ];
+  }
+} catch (error) {
+  console.error('Error reading users file:', error);
+  users = []; // fallback to empty array
+}
 
 export const {
   handlers: { GET, POST },
