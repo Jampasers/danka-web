@@ -10,7 +10,11 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({ email: "", password: "", general: "" });
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+    general: "",
+  });
   const router = useRouter();
 
   const validatePassword = (password: string) => {
@@ -62,28 +66,28 @@ const Login = () => {
     }
 
     setIsLoading(true);
-    setErrors(prev => ({ ...prev, general: "" }));
+    setErrors((prev) => ({ ...prev, general: "" }));
 
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         email,
         password,
         redirect: false, // Prevent automatic redirect
       });
 
       if (result?.error) {
-        setErrors(prev => ({
+        setErrors((prev) => ({
           ...prev,
           general: result.error || "Invalid email or password",
         }));
       } else {
         // Successful login, redirect manually
-        router.push('/');
+        router.push("/");
         router.refresh(); // Refresh to update UI state
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         general: "An error occurred. Please try again.",
       }));
@@ -119,6 +123,10 @@ const Login = () => {
 
           {/* Form */}
           <div className="px-6 py-8">
+            <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 text-sm p-3 rounded-lg">
+              ⚠️ Fitur login belum tersedia saat ini. Silakan coba lagi nanti.
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div>
@@ -213,13 +221,13 @@ const Login = () => {
               <div>
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled //</div>={isLoading}
                   className="w-full flex justify-center items-center bg-gradient-to-r from-orange-500 to-orange-600 text-black py-3 px-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>
                       <Loader className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                      Signing in...
+                      Signing in... (Comin Soon)
                     </>
                   ) : (
                     "Sign in"
