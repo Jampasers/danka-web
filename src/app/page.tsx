@@ -2,14 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  ShoppingCart,
   Shield,
   Star,
   Gamepad2,
   Zap,
   Coins,
-  User,
-  LogIn,
 } from "lucide-react";
 
 interface Game {
